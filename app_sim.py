@@ -315,7 +315,7 @@ def main_func(fecha):
         
         # segunda fila de indicadores
         kpi21, kpi22, kpi23, kpi24, kpi25 = st.columns(5)
-        kpi23.metric(label="Blocked dest numbers", value=millify(num_bloq, prefixes=[' K', ' MM']))
+        kpi23.metric(label="Blocked dest numbers", value=millify(num_bloq, prefixes=[' K', ' MM']), delta=nums_bloq - stats_dict['nums_bloq'])
 
         # asigna indicadores a dict
         stats_dict['total_calls'] = len(df)
@@ -397,7 +397,7 @@ stats_dict = {
     'total_calls': 0,
     'dest_nums': 0,
     'dest_nums_flat': 0,
-    'avr_dur': 0,
+    'avg_dur': 0,
     'avg_dur_flat': 0,
     'nums_bloq': 0
     }

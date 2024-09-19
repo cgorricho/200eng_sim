@@ -187,7 +187,6 @@ def fetch_data(fecha):
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
-    
     for ind in ind_marcadores:
         bd[f'marcador_{ind}'].close()
     return df

@@ -152,10 +152,8 @@ def connect_to_db():
     for i, ind in enumerate(ind_marcadores):
         # crea la conexión
         bd[f'marcador_{ind}'] = connect(host = url_marcadores[i],
-                                                    user=os.getenv('200ENG_SQL_USER'),
-                                                    # user='carlosai',
-                                                    passwd=os.getenv('200ENG_SQL_PSWD'),
-                                                    # passwd='OKJmBUIFnh',
+                                                    user=os.getenv('EASYCHAT_SQL_USER'),
+                                                    passwd=os.getenv('EASYCHAT_SQL_PSWD'),
                                                     database='mbilling',
                                                     )
 
@@ -281,7 +279,7 @@ def main_func(fecha):
     with placeholder_body.container():
         
         # calcula la fecha menor de la ventana de consulta a la BD
-        fecha_inicial = max(datetime(2023, 1, 13, 12, 0, 0), (fecha - timedelta(days=30)))
+        fecha_inicial = max(datetime(2023, 1, 13, 12, 0, 0), (fecha - timedelta(days=15)))
         
         st.subheader(f'Fetching data between :blue[{fecha_inicial}] and :blue[{fecha}]')
 

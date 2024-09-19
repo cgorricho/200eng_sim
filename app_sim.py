@@ -167,7 +167,9 @@ def connect_to_db():
 def get_df(bd, bd_name, query):
     df_temp = pd.read_sql(query, bd)
     df_temp['bd'] = bd_name
-
+    df_temp.calledstation = df_temp.calledstation.astype('category')
+    df_temp.real_sessiontime = df_temp.real_sessiontime.astype('int')
+    df_temp.bd = df_temp.bd.astype('category')
     return df_temp
 
 
@@ -185,9 +187,7 @@ def fetch_data(fecha):
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
-    df.calledstation = df.calledstation.astype('category')
-    df.real_sessiontime = df.real_sessiontime.astype('int')
-    df.bd = df.bd.astype('category')
+    
     for ind in ind_marcadores:
         bd[f'marcador_{ind}'].close()
     return df

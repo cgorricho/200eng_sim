@@ -20,7 +20,7 @@ from millify import millify, prettify
 ### DEFINICIONES DE PAGINA ###
 
 st.set_page_config(
-    page_title = 'Easy Chat Services',
+    page_title = 'Easy-Chat-Services',
     # page_icon = '🏭',
     layout = 'wide'
 )
@@ -29,7 +29,7 @@ st.set_page_config(
 
 # título del dashboard
 
-st.markdown("# Esay Chat Servides LLC - Call monitoring app")
+st.markdown("# Esay Chat Services LLC - Call monitoring app")
 
 # columnas para simulación de la app
 sim_col1, separador_sim, sim_col2 = st.columns([15, 2, 30])
@@ -309,8 +309,8 @@ def main_func(fecha):
         kpi11.metric(label="Total calls", value=millify(total_calls, precision=2, prefixes=[' K', ' MM']), delta=total_calls - stats_dict['total_calls'])
         kpi12.metric(label="Dest numbers", value=millify(dest_nums, precision=2, prefixes=[' K', ' MM']), delta=dest_nums - stats_dict['dest_nums'])
         kpi13.metric(label="Dest numbers flat line", value=millify(dest_nums_flat, precision=2, prefixes=[' K', ' MM']), delta=dest_nums_flat - stats_dict['dest_nums_flat'])
-        kpi14.metric(label="Avg call duration", value=millify(avg_dur, precision=2, prefixes=[' K', ' MM']), delta=avg_dur - stats_dict['avg_dur'])
-        kpi15.metric(label="Avg call duration flat line", value=millify(avg_dur_flat, precision=2, prefixes=[' K', ' MM']), delta=avg_dur_flat - stats_dict['avg_dur_flat'])
+        kpi14.metric(label="Avg call duration", value=millify(avg_dur, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur - stats_dict['avg_dur'], 3))
+        kpi15.metric(label="Avg call duration flat line", value=millify(avg_dur_flat, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur_flat - stats_dict['avg_dur_flat'], 3))
 
         
         # segunda fila de indicadores
@@ -324,9 +324,6 @@ def main_func(fecha):
         stats_dict['avg_dur'] = df_dest.dur_prom.mean()
         stats_dict['avg_dur_flat'] = df_dest_flat.dur_prom.mean()
         stats_dict['nums_bloq'] = num_bloq
-        
-        
-        
         
         # primera fila de gráficas
         fig_col1, fig_col2 = st.columns(2)
@@ -363,7 +360,7 @@ def main_func(fecha):
             st.plotly_chart(fig2, use_container_width=True)
     
         # segunda fila de gráficas
-        fig_col12, fig_col22 = st.columns(2)
+        fig_col21, fig_col22 = st.columns(2)
         
         # línea divisora 
         st.divider()
@@ -383,6 +380,25 @@ def main_func(fecha):
         elapsed = end - start
         dur_iter.append(elapsed)
         st.write(f'Iteration took {elapsed}')
+
+        # tercera fila de gráficas
+        fig_col31, fig_col32 = st.columns(4)
+        with fig_col31:
+            st.markdown("#### Calls by day of week")
+            fig5 = px.bar(df.groupby('weekday').count(), 
+                        x=df.groupby('weekday').count().index, 
+                        y='calledstation',
+                        labels={
+                            'x': 'Day of week (Mon=0, Sun=6)',
+                            'calledstation': 'number of calls',
+                        })
+            fig2.update_layout(xaxis = dict(
+                                tickmode = 'linear',
+                                tick0 = 1,
+                                dtick = 1)
+                            )
+            st.plotly_chart(fig2, use_container_width=True)
+
       
 
 ### MAIN BODY OF SCRIPT ###       

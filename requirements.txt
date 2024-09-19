@@ -1,0 +1,8 @@
+numpy
+pandas
+plotly.express
+pymysql
+python-dotenv
+millify
+streamlit
+streamlit_autorefresh

@@ -185,6 +185,9 @@ def fetch_data(fecha):
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
+    df.calledstation = df.calledstation.astype('category')
+    df.real_sessiontime = df.real_sessiontime.astype('int')
+    df.bd = df.bd.astype('category')
     for ind in ind_marcadores:
         bd[f'marcador_{ind}'].close()
     return df
@@ -382,7 +385,7 @@ def main_func(fecha):
         st.write(f'Iteration took {elapsed}')
 
         # tercera fila de gráficas
-        fig_col31, fig_col32 = st.columns(4)
+        fig_col31, fig_col32, fig_col33, fig_col34 = st.columns(4)
         with fig_col31:
             st.markdown("#### Calls by day of week")
             fig5 = px.bar(df.groupby('weekday').count(), 

@@ -174,12 +174,12 @@ def get_df(bd, bd_name, query):
 
 
 # obtiene datos de los marcadores
-def fetch_data(fecha, fecha_inicial):
+def fetch_data(fecha_inicial, fecha):
     bd, _ = connect_to_db()
     query = dedent(f"""
         SELECT starttime, calledstation, real_sessiontime
         FROM pkg_cdr
-        WHERE starttime BETWEEN '{fecha_inicial)}' AND '{fecha}';
+        WHERE starttime BETWEEN '{fecha_inicial}' AND '{fecha}';
         """)
     df_list = [get_df(bd[f'marcador_{ind}'], f'marcador_{ind}', query) for ind in ind_marcadores]
     df = pd.concat(df_list, axis=0)
@@ -187,6 +187,7 @@ def fetch_data(fecha, fecha_inicial):
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
+    print(df.head())
     for ind in ind_marcadores:
         bd[f'marcador_{ind}'].close()
     return df
@@ -289,13 +290,16 @@ def main_func(fecha_inicio, fecha):
         start = datetime.now()
         
         # obtiene datos
-        df = fetch_data(fecha, fecha_inicial)
+        df = fetch_data(fecha_inicial, fecha)
 
         # transforma datos para crear hoja de vida de números de destino
         df_dest, df_dest_flat = destination_df(df)
 
         # bloquea números con flat line
-        num_bloq = add_data(df_dest_flat)
+        if len(df_dest_flat) > 0:
+            num_bloq = add_data(df_dest_flat)
+        else:
+            num_bloq = 0
 
         # define indicadores
         total_calls = len(df)
@@ -386,14 +390,15 @@ def main_func(fecha_inicio, fecha):
         # tercera fila de gráficas
         fig_col31, fig_col32, fig_col33, fig_col34 = st.columns(4)
         with fig_col31:
-            st.markdown("#### Calls by day of week")
-            x = [i for i in range(len(dur_iter))]
-            df_iter = pd.DataFrame('x': x, 'y': dur_iter)
-            fig5 = px.line(df_iter, 
-                        x='x', 
-                        y='y',
-                        )
-            st.plotly_chart(fig5, use_container_width=True)
+            if len(dur_iter) > 0:
+                st.markdown("#### Calls by day of week")
+                x_list = [i for i in range(len(dur_iter))]
+                df_iter = pd.DataFrame({'x': x_list, 'y': dur_iter})
+                fig5 = px.line(df_iter, 
+                            x='x', 
+                            y='y',
+                            )
+                st.plotly_chart(fig5, use_container_width=True)
 
       
 

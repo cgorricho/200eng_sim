@@ -174,12 +174,12 @@ def get_df(bd, bd_name, query):
 
 
 # obtiene datos de los marcadores
-def fetch_data(fecha):
+def fetch_data(fecha, fecha_inicial):
     bd, _ = connect_to_db()
     query = dedent(f"""
         SELECT starttime, calledstation, real_sessiontime
         FROM pkg_cdr
-        WHERE starttime BETWEEN '{fecha - timedelta(days=30)}' AND '{fecha}';
+        WHERE starttime BETWEEN '{fecha_inicial)}' AND '{fecha}';
         """)
     df_list = [get_df(bd[f'marcador_{ind}'], f'marcador_{ind}', query) for ind in ind_marcadores]
     df = pd.concat(df_list, axis=0)
@@ -289,7 +289,7 @@ def main_func(fecha_inicio, fecha):
         start = datetime.now()
         
         # obtiene datos
-        df = fetch_data(fecha)
+        df = fetch_data(fecha, fecha_inicial)
 
         # transforma datos para crear hoja de vida de números de destino
         df_dest, df_dest_flat = destination_df(df)
@@ -387,19 +387,13 @@ def main_func(fecha_inicio, fecha):
         fig_col31, fig_col32, fig_col33, fig_col34 = st.columns(4)
         with fig_col31:
             st.markdown("#### Calls by day of week")
-            fig5 = px.bar(df.groupby('weekday').count(), 
-                        x=df.groupby('weekday').count().index, 
-                        y='calledstation',
-                        labels={
-                            'x': 'Day of week (Mon=0, Sun=6)',
-                            'calledstation': 'number of calls',
-                        })
-            fig2.update_layout(xaxis = dict(
-                                tickmode = 'linear',
-                                tick0 = 1,
-                                dtick = 1)
-                            )
-            st.plotly_chart(fig2, use_container_width=True)
+            x = [i for i in range(len(dur_iter))]
+            df_iter = pd.DataFrame('x': x, 'y': dur_iter)
+            fig5 = px.line(df_iter, 
+                        x='x', 
+                        y='y',
+                        )
+            st.plotly_chart(fig5, use_container_width=True)
 
       
 
@@ -408,7 +402,7 @@ def main_func(fecha_inicio, fecha):
 # definición de variables iniciales
 cont = 1
 sim_date = datetime(fecha.year, fecha.month, fecha.day, 8, 30, 0)
-init_date = sim_date
+init_date = sim_date - timedelta(minutes=5)
 stop_date = datetime(2024, 1, 31)
 iter_sim = int((stop_date - datetime(fecha.year, fecha.month, fecha.day)).days / freq * 60 * 24)
 

@@ -187,22 +187,21 @@ def fetch_data(fecha_inicial, fecha):
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
-    print(df.head())
     for ind in ind_marcadores:
         bd[f'marcador_{ind}'].close()
     return df
 
 
 # agrega datos a los marcadores para bloquear números de destino
-def add_data(df_dest_flat):
+def add_data(df_flat):
     # establece los conectores a los servidores mysql
     bd, cursores = connect_to_db()
 
     # crea cadena de tuplas
     block_numbers = ''
     ind = 0
-    num_block = 10 # solo para simulación
-    index_lm = df_dest_flat.index
+    index_lm = df_flat.index
+    num_block = min(10, len(index_lm)) # solo para simulación
 
     while ind < num_block:
         block_numbers += "("
@@ -295,6 +294,9 @@ def main_func(fecha_inicio, fecha):
         # transforma datos para crear hoja de vida de números de destino
         df_dest, df_dest_flat = destination_df(df)
 
+        print(f'df dest: {len(df_dest)}')
+        print(f'df dest flat: {len(df_dest_flat)}')
+
         # bloquea números con flat line
         if len(df_dest_flat) > 0:
             num_bloq = add_data(df_dest_flat)
@@ -315,8 +317,8 @@ def main_func(fecha_inicio, fecha):
         kpi11.metric(label="Total calls", value=millify(total_calls, precision=2, prefixes=[' K', ' MM']), delta=total_calls - stats_dict['total_calls'])
         kpi12.metric(label="Dest numbers", value=millify(dest_nums, precision=2, prefixes=[' K', ' MM']), delta=dest_nums - stats_dict['dest_nums'])
         kpi13.metric(label="Dest numbers flat line", value=millify(dest_nums_flat, precision=2, prefixes=[' K', ' MM']), delta=dest_nums_flat - stats_dict['dest_nums_flat'])
-        kpi14.metric(label="Avg call duration", value=millify(avg_dur, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur - stats_dict['avg_dur'], 3))
-        kpi15.metric(label="Avg call duration flat line", value=millify(avg_dur_flat, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur_flat - stats_dict['avg_dur_flat'], 3))
+        kpi14.metric(label="Avg call duration", value=millify(avg_dur, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur - stats_dict['avg_dur'], 2))
+        kpi15.metric(label="Avg call duration flat line", value=millify(avg_dur_flat, precision=2, prefixes=[' K', ' MM']), delta=round(avg_dur_flat - stats_dict['avg_dur_flat'], 2))
 
         
         # segunda fila de indicadores
@@ -384,21 +386,21 @@ def main_func(fecha_inicio, fecha):
         # para cronómetro e imprime tiempo de cada ciclo
         end =datetime.now()
         elapsed = end - start
-        dur_iter.append(elapsed)
+        dur_iter.append(elapsed.microseconds)
         st.write(f'Iteration took {elapsed}')
 
         # tercera fila de gráficas
         fig_col31, fig_col32, fig_col33, fig_col34 = st.columns(4)
-        with fig_col31:
-            if len(dur_iter) > 0:
-                st.markdown("#### Calls by day of week")
-                x_list = [i for i in range(len(dur_iter))]
-                df_iter = pd.DataFrame({'x': x_list, 'y': dur_iter})
-                fig5 = px.line(df_iter, 
-                            x='x', 
-                            y='y',
-                            )
-                st.plotly_chart(fig5, use_container_width=True)
+        # with fig_col31:
+        #     if len(dur_iter) > 0:
+        #         st.markdown("#### Calls by day of week")
+        #         x_list = [i for i in range(len(dur_iter))]
+        #         df_iter = pd.DataFrame({'x': x_list, 'y': dur_iter})
+        #         fig5 = px.line(df_iter, 
+        #                     x='x', 
+        #                     y='y',
+        #                     )
+        #         st.plotly_chart(fig5, use_container_width=True)
 
       
 

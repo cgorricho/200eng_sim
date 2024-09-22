@@ -29,7 +29,7 @@ st.set_page_config(
 
 # título del dashboard
 
-st.markdown("# Esay Chat Services LLC - Call monitoring app")
+st.markdown("# Easy Chat Services LLC - Call monitoring app")
 
 # columnas para simulación de la app
 sim_col1, separador_sim, sim_col2 = st.columns([15, 2, 30])
@@ -387,7 +387,7 @@ def main_func(fecha_inicio, fecha):
         end =datetime.now()
         elapsed = end - start
         dur_iter.append(elapsed.microseconds)
-        st.write(f'Iteration took {elapsed}')
+        st.write(f'Iteration {cont} took {elapsed}')
 
         # tercera fila de gráficas
         fig_col31, fig_col32, fig_col33, fig_col34 = st.columns(4)

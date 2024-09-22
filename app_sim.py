@@ -272,7 +272,7 @@ def destination_df(df):
 
 
 # define main function
-def main_func(fecha): 
+def main_func(fecha_inicio, fecha): 
     
     #captura variable global
     global stats_dict, dur_iter
@@ -281,7 +281,7 @@ def main_func(fecha):
     with placeholder_body.container():
         
         # calcula la fecha menor de la ventana de consulta a la BD
-        fecha_inicial = max(datetime(2023, 1, 13, 12, 0, 0), (fecha - timedelta(days=15)))
+        fecha_inicial = max(fecha_inicio, (fecha - timedelta(days=15)))
         
         st.subheader(f'Fetching data between :blue[{fecha_inicial}] and :blue[{fecha}]')
 
@@ -408,6 +408,7 @@ def main_func(fecha):
 # definición de variables iniciales
 cont = 1
 sim_date = datetime(fecha.year, fecha.month, fecha.day, 8, 30, 0)
+init_date = sim_date
 stop_date = datetime(2024, 1, 31)
 iter_sim = int((stop_date - datetime(fecha.year, fecha.month, fecha.day)).days / freq * 60 * 24)
 
@@ -425,7 +426,7 @@ dur_iter = [0]
 
 for iter in range(iter_sim):
 
-    main_func(sim_date)
+    main_func(init_date, sim_date)
 
     if sim_date.hour <= 21 and sim_date.hour >= 7:
         sim_date += timedelta(minutes=freq)

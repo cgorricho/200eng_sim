@@ -171,7 +171,8 @@ def get_df(bd, bd_name, query):
             df_temp = pd.read_sql(query, bd)
             read_ok = True
         except:
-            sleep(5)
+            sleep(30)
+            bd, _ = connect_to_db()
     df_temp['bd'] = bd_name
     df_temp.calledstation = df_temp.calledstation.astype('category')
     df_temp.real_sessiontime = df_temp.real_sessiontime.astype('int')
@@ -445,7 +446,7 @@ for iter in range(iter_sim):
         
     cont += 1
 
-    
+
 
 
 

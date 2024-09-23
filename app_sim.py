@@ -165,7 +165,13 @@ def connect_to_db():
 
 # crea una función para devolver cada dataframe
 def get_df(bd, bd_name, query):
-    df_temp = pd.read_sql(query, bd)
+    read_ok = False
+    while not read_ok:
+        try:
+            df_temp = pd.read_sql(query, bd)
+            read_ok = True
+        except:
+            sleep(5)
     df_temp['bd'] = bd_name
     df_temp.calledstation = df_temp.calledstation.astype('category')
     df_temp.real_sessiontime = df_temp.real_sessiontime.astype('int')

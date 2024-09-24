@@ -1,7 +1,10 @@
 numpy
 pandas
+matplotlib
+seaborn
 plotly.express
 pymysql
+sqlalchemy
 python-dotenv
 millify
 streamlit

@@ -9,7 +9,6 @@ import plotly.express as px # interactive charts
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime, time, timedelta, date
 from time import sleep
-# import matplotlib.pyplot as plt
 from pymysql import connect
 import os
 import dotenv

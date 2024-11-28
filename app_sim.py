@@ -42,7 +42,7 @@ with sim_col1:
         st.write('App running on sim mode')
         
         fecha = st.date_input("Date to start simulation", 
-                              date(2023, 9, 30),
+                              date(2024, 8, 8),
                               format='YYYY-MM-DD',
                               )
         # st.write(fecha)
@@ -143,22 +143,35 @@ url_marcadores = ['83.138.55.125',
 
 ind_marcadores = [1, 2, 3, 4, 6, 7]
 
-# función para conectarse a todos los marcadores
-def connect_to_db():
+url_backup = '86.106.183.70'
+
+database_backup = ['marcador1',
+                   'marcador2',
+                   'marcador3',
+                   'marcador4',
+                   'marcador6',
+                   'marcador7']
+
+# función para concectarse a servidor backup
+def connect_to_db_backup():
     bd = {}
     cursores = {}
 
-    for i, ind in enumerate(ind_marcadores):
-        # crea la conexión
-        bd[f'marcador_{ind}'] = connect(host = url_marcadores[i],
-                                                    user=os.getenv('EASYCHAT_SQL_USER'),
-                                                    passwd=os.getenv('EASYCHAT_SQL_PSWD'),
-                                                    database='mbilling',
-                                                    )
+    for dbase in database_backup:
+        try:    
+            # crea la conexión
+            bd[f'{dbase}'] = connect(host = url_backup,
+                                            user=os.getenv('EASYCHAT_SQL_USER'),
+                                            passwd=os.getenv('EASYCHAT_SQL_PSWD'),
+                                            database=dbase,
+                                            )
 
-        # crea el cursor
-        cursores[f'cursor_marcador_{ind}'] = bd[f'marcador_{ind}'].cursor()
-
+            # crea el cursor
+            cursores[f'cursor_{dbase}'] = bd[f'{dbase}'].cursor()
+            print(f'Conexión exitosa a base de datos {dbase} con ip {url_backup}')
+        except:
+            print(f'Error conectando a base de datos {dbase} con ip {url_backup}')
+            continue
     return bd, cursores
 
 
@@ -171,8 +184,9 @@ def get_df(bd, bd_name, query):
             read_ok = True
         except:
             sleep(30)
-            bd, _ = connect_to_db()
+            bd, _ = connect_to_db_backup()
     df_temp['bd'] = bd_name
+    df_temp.starttime = pd.to_datetime(df_temp.starttime)
     df_temp.calledstation = df_temp.calledstation.astype('category')
     df_temp.real_sessiontime = df_temp.real_sessiontime.astype('int')
     df_temp.bd = df_temp.bd.astype('category')
@@ -181,39 +195,61 @@ def get_df(bd, bd_name, query):
 
 # obtiene datos de los marcadores
 def fetch_data(fecha_inicial, fecha):
-    bd, _ = connect_to_db()
+    bd, _ = connect_to_db_backup()
     query = dedent(f"""
         SELECT starttime, calledstation, real_sessiontime
         FROM pkg_cdr
         WHERE starttime BETWEEN '{fecha_inicial}' AND '{fecha}';
         """)
-    df_list = [get_df(bd[f'marcador_{ind}'], f'marcador_{ind}', query) for ind in ind_marcadores]
+    print(query)
+    df_list = []
+    for dbase in database_backup:
+        query_ok = False
+        conn_ok = False
+        print(f'Consultando {dbase}...')
+        # while not query_ok:
+        try:
+            df_list.append(get_df(bd[dbase], dbase, query))
+            query_ok = True
+            print(f'Consulta {dbase} OK')
+        except Exception as e:
+            print(f'Consulta {dbase} con ERROR {e}')
+                # while not conn_ok:
+                #     try:
+                #         bd, _ = connect_to_db_backup()
+                #         conn_ok = True
+                #         print(f'Nueva conexión bd OK')
+                #     except:
+                #         print(f'Nueva conexión bd con ERROR')
+                #         sleep(5)
     df = pd.concat(df_list, axis=0)
+    print(df.info())
+    print(df.head())
     df['weekday'] = df.starttime.dt.weekday
     df['hour'] = df.starttime.dt.hour
     df = df.set_index('starttime')
     df = df.sort_index()
-    for ind in ind_marcadores:
-        bd[f'marcador_{ind}'].close()
+    for dbase in database_backup:
+        bd[dbase].close()
     return df
 
 
 # agrega datos a los marcadores para bloquear números de destino
 def add_data(df_flat):
     # establece los conectores a los servidores mysql
-    bd, cursores = connect_to_db()
+    bd, cursores = connect_to_db_backup()
 
     # crea cadena de tuplas
     block_numbers = ''
     ind = 0
     index_lm = df_flat.index
-    num_block = min(10, len(index_lm)) # solo para simulación
+    num_block = len(index_lm) # solo para simulación
 
     while ind < num_block:
         block_numbers += "("
         block_numbers += index_lm[ind]
         block_numbers += ","
-        block_numbers += f"'Número agregado por Carlos Gorricho desde script the Python el {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}'"
+        block_numbers += f"'OPERACION AGOSTO 2024 Número agregado desde Python el {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}'"
         if ind < num_block - 1:
             block_numbers += "),\n"
         else:
@@ -234,8 +270,8 @@ def add_data(df_flat):
         print(f'Condirmando cambios en {base}')       
 
     # cierra las connecciones a los servidores mysql
-    for ind in ind_marcadores:
-        bd[f'marcador_{ind}'].close()
+    for dbase in database_backup:
+        bd[dbase].close()
     
     return cursores[key].rowcount
 
@@ -292,19 +328,23 @@ def main_func(fecha_inicio, fecha):
         st.subheader(f'Fetching data between :blue[{fecha_inicial}] and :blue[{fecha}]')
 
         # cronómetro
-        start = datetime.now()
+        start_iter = datetime.now()
         
         # obtiene datos
         df = fetch_data(fecha_inicial, fecha)
 
         # transforma datos para crear hoja de vida de números de destino
-        df_dest, df_dest_flat = destination_df(df)
+        if not df.empty:
+            df_dest, df_dest_flat = destination_df(df)
+        else:
+            df_dest = pd.DataFrame()
+            df_dest_flat = pd.DataFrame()
 
         print(f'df dest: {len(df_dest)}')
         print(f'df dest flat: {len(df_dest_flat)}')
 
         # bloquea números con flat line
-        if len(df_dest_flat) > 0:
+        if not df_dest_flat.empty:
             num_bloq = add_data(df_dest_flat)
         else:
             num_bloq = 0
@@ -313,8 +353,14 @@ def main_func(fecha_inicio, fecha):
         total_calls = len(df)
         dest_nums = len(df_dest)
         dest_nums_flat = len(df_dest_flat)
-        avg_dur = df_dest.dur_prom.mean()
-        avg_dur_flat = df_dest_flat.dur_prom.mean()
+        if not df_dest.empty:
+            avg_dur = df_dest.dur_prom.mean()
+        else:
+            avg_dur = 0
+        if not df_dest_flat.empty:
+            avg_dur_flat = df_dest_flat.dur_prom.mean()
+        else:
+            avg_dur_flat = 0
         nums_bloq = num_bloq
         
         
@@ -335,8 +381,14 @@ def main_func(fecha_inicio, fecha):
         stats_dict['total_calls'] = len(df)
         stats_dict['dest_nums'] = len(df_dest)
         stats_dict['dest_nums_flat'] = len(df_dest_flat)
-        stats_dict['avg_dur'] = df_dest.dur_prom.mean()
-        stats_dict['avg_dur_flat'] = df_dest_flat.dur_prom.mean()
+        if not df_dest.empty:
+            stats_dict['avg_dur'] = df_dest.dur_prom.mean()
+        else:
+            stats_dict['avg_dur'] = 0
+        if not df_dest_flat.empty:
+            stats_dict['avg_dur_flat'] = df_dest_flat.dur_prom.mean()
+        else:
+            stats_dict['avg_dur_flat'] = 0
         stats_dict['nums_bloq'] = num_bloq
         
         # primera fila de gráficas
@@ -390,8 +442,8 @@ def main_func(fecha_inicio, fecha):
             st.write(f'Flat_ratio = std / mean of last 2 calls')
 
         # para cronómetro e imprime tiempo de cada ciclo
-        end =datetime.now()
-        elapsed = end - start
+        end_iter =datetime.now()
+        elapsed = end_iter - start_iter
         dur_iter.append(elapsed.microseconds)
         st.write(f'Iteration {cont} took {elapsed}')
 
@@ -414,9 +466,9 @@ def main_func(fecha_inicio, fecha):
 
 # definición de variables iniciales
 cont = 1
-sim_date = datetime(fecha.year, fecha.month, fecha.day, 8, 30, 0)
-init_date = sim_date - timedelta(minutes=5)
-stop_date = datetime(2024, 1, 31)
+sim_date = datetime(fecha.year, fecha.month, fecha.day, 12, 0, 0)
+init_date = datetime(2024, 8, 6, 12, 0, 0)
+stop_date = datetime(2024, 8, 31)
 iter_sim = int((stop_date - datetime(fecha.year, fecha.month, fecha.day)).days / freq * 60 * 24)
 
 stats_dict = {
